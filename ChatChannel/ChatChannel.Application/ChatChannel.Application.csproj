@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ChatChannel.Domain.Model\ChatChannel.Domain.Model.csproj" />
+    <ProjectReference Include="..\ChatChannel.Infraustructure\ChatChannel.Infraustructure.csproj" />
+  </ItemGroup>
+
+</Project>
