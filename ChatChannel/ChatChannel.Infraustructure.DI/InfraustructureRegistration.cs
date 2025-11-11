@@ -1,4 +1,8 @@
-﻿using ChatChannel.Infraustructure.Substructure.Utils;
+﻿using ChatChannel.Domain.Model.Contracts;
+using ChatChannel.Infraustructure.Repository;
+using ChatChannel.Infraustructure.Substructure.Utils;
+using ChatChannel.Infraustructure.UnitOfwork;
+using ChatChannel.Infraustructure.UnitOfWork;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +23,7 @@ namespace ChatChannel.Infraustructure.DI
             services.Configure<ConnectionStrings>(connectionStringsConfiguration);
             var connectionStrings = connectionStringsConfiguration.Get<ConnectionStrings>();
 
+
             services.AddDbContext<ChatDbContext>(options =>
             {
                 var connectionStringBuilder = new SqlConnectionStringBuilder()
@@ -31,6 +36,8 @@ namespace ChatChannel.Infraustructure.DI
 
                 options.UseSqlServer(connectionStringBuilder.ConnectionString);
             });
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUnitOfWork,UnitOfwork.UnitOfWork>();
             return services;
         }
     }

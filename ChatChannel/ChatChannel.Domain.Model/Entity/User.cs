@@ -23,11 +23,21 @@ namespace ChatChannel.Domain.Model.Entity
         public Guid Id { get; private set; }
         public string Username { get; private set; }
         public Role role { get; private set; }
+        public bool HaveUnreadMessage { get; private set; } = false;
 
         public IEnumerable<Message> Messages => _messages.AsReadOnly();
 
 
         public void AddMessage(Message message) => _messages.Add(message);
+
+        public void HaveUnreadMessageToTrue()
+        {
+            this.HaveUnreadMessage = true;
+        }
+        public void HaveUnreadMessageToFalse()
+        {
+            this.HaveUnreadMessage = false;
+        }
 
     }
 }
