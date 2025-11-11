@@ -15,5 +15,6 @@ namespace ChatChannel.Domain.Model.Contracts
         void AddUser(User user);
         Task<User> GetUserWithMessages(string username);
         Task<List<User>> SeeAllUnreadMessages();
+        Task UpdateUser(User user , Message messageToPush,bool haveRead);
     }
 }

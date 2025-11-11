@@ -11,12 +11,12 @@ namespace ChatChannel.Application.Dtos
         public MessageDto(string username, string content, DateTime sentDate)
         {
             Username = username;
-            Content = content;
+            Context = content;
             SentDate = sentDate;
         }
 
         public string Username { get; private set; }
-        public string Content { get; private set; }
+        public string Context { get; private set; }
         public DateTime SentDate { get; private set; }
     }
 }

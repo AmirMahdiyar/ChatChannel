@@ -2,9 +2,14 @@
 using ChatChannel.Application.Exception;
 using ChatChannel.Domain.Model.Contracts;
 using ChatChannel.Domain.Model.Enums;
+using ChatChannel.Infraustructure;
+using ChatChannel.Infraustructure.MongoRepository;
+using ChatChannel.Infraustructure.Repository;
 using ChatChannel.Infraustructure.Substructure.Base.ApplicationException;
+using ChatChannel.Infraustructure.Substructure.Utils;
 using ChatChannel.Infraustructure.UnitOfWork;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +24,19 @@ namespace ChatChannel.Application.Chat
     {
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IsSqlOrNoSqlSetting _isSqlOrNoSqlSetting;
+        private readonly IOptions<MongoSetting> _mongoSetting;
+        private readonly ChatDbContext _dbContext;
 
-        public ChatHub(IUserRepository userRepository, IUnitOfWork unitOfWork)
+        public ChatHub(IUserRepository userRepository, IUnitOfWork unitOfWork, IOptions<IsSqlOrNoSqlSetting> isSqlOrNoSqlSetting,
+            IOptions<MongoSetting> mongoSetting, ChatDbContext dbContext)
         {
-            _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _isSqlOrNoSqlSetting = isSqlOrNoSqlSetting.Value;
+            _mongoSetting = mongoSetting;
+            _dbContext = dbContext;
+            var userRep = CheckSqlOrNoSql(_isSqlOrNoSqlSetting);
+            _userRepository = userRep;
         }
         public override async Task OnConnectedAsync()
         {
@@ -34,19 +47,34 @@ namespace ChatChannel.Application.Chat
             {
                 if (userRole == Role.Support.ToString())
                 {
-                    _userRepository.AddUser(username.ToSupportUser());
-                    savingResult = await _unitOfWork.Commit(CancellationToken.None);
-                    savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
+                    if (_isSqlOrNoSqlSetting.SqlOrNoSql)
+                    {
+                        _userRepository.AddUser(username.ToSupportUser());
+                        savingResult = await _unitOfWork.Commit(CancellationToken.None);
+                        savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
+                    }
+                    else
+                    {
+                        _userRepository.AddUser(username.ToSupportUser());
+
+                    }
                 }
 
                 else
                 {
-                    _userRepository.AddUser(username.ToCustomerUser());
-                    savingResult = await _unitOfWork.Commit(CancellationToken.None);
-                    savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
+                    if (_isSqlOrNoSqlSetting.SqlOrNoSql)
+                    {
+                        _userRepository.AddUser(username.ToCustomerUser());
+                        savingResult = await _unitOfWork.Commit(CancellationToken.None);
+                        savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
+                    }
+                    else
+                        _userRepository.AddUser(username.ToCustomerUser());
+
                 }
 
             }
+
 
         }
 
@@ -59,9 +87,16 @@ namespace ChatChannel.Application.Chat
             var targetMessage = message.ToMessage(userRole);
             user.AddMessage(targetMessage);
             user.HaveUnreadMessageToTrue();
-            var savingResult = new SavingResult();
-            savingResult = await _unitOfWork.Commit(CancellationToken.None);
-            savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
+            if (_isSqlOrNoSqlSetting.SqlOrNoSql)
+            {
+                var savingResult = new SavingResult();
+                savingResult = await _unitOfWork.Commit(CancellationToken.None);
+                savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
+            }
+            else
+            {
+                await _userRepository.UpdateUser(user, targetMessage ,true);
+            }
 
             await Clients.Client(Context.ConnectionId).SendAsync("MessageSaved", "Your Message Submitted Successfully");
 
@@ -77,7 +112,7 @@ namespace ChatChannel.Application.Chat
             var unreadMessages = users.Select(x => new UserDto(x.Username, x.Id, x.Messages.Select(x => new MessageDto(user, x.Context, x.Date)).ToList()));
             foreach (var userWithUnreadMessage in unreadMessages)
             {
-                var messagesText = string.Join(" | ", userWithUnreadMessage.Content.Select(x => $"{x.Content} Date: {x.SentDate:yyyy-MM-dd HH:mm}"));
+                var messagesText = string.Join(" | ", userWithUnreadMessage.Context.Select(x => $"{x.Context} Date: {x.SentDate:yyyy-MM-dd HH:mm}"));
 
                 await Clients.Client(Context.ConnectionId).SendAsync(
                     "Messages", $"Username : {userWithUnreadMessage.Username} , UserId : {userWithUnreadMessage.UserId} , Content :{messagesText} ");
@@ -94,9 +129,16 @@ namespace ChatChannel.Application.Chat
             var supportResponseToCustomer = message.ToMessage(userRole);
             customer.AddMessage(supportResponseToCustomer);
             customer.HaveUnreadMessageToFalse();
-            var savingResult = new SavingResult();
-            savingResult = await _unitOfWork.Commit(CancellationToken.None);
-            savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
+            if (_isSqlOrNoSqlSetting.SqlOrNoSql)
+            {
+                var savingResult = new SavingResult();
+                savingResult = await _unitOfWork.Commit(CancellationToken.None);
+                savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
+            }
+            else
+            {
+                await _userRepository.UpdateUser(customer,supportResponseToCustomer,false);
+            }
 
         }
 
@@ -110,7 +152,7 @@ namespace ChatChannel.Application.Chat
             var messagesList = customer.Messages.Select(x=> new MessageDto(user,x.Context,x.Date)).ToList();
             foreach (var message in messagesList)
                 await Clients.Client(Context.ConnectionId).SendAsync
-                    ("Messages", $"username : {message.Username} - Content : {message.Content} - DateOfSent : {message.SentDate}");
+                    ("Messages", $"username : {message.Username} - Content : {message.Context} - DateOfSent : {message.SentDate}");
         }
 
 
@@ -128,6 +170,13 @@ namespace ChatChannel.Application.Chat
         private string GetUsername()
         {
             return Context.User.Claims.SingleOrDefault(x => x.Type == "Username").Value;
+        }
+        private IUserRepository CheckSqlOrNoSql(IsSqlOrNoSqlSetting setting)
+        {
+            if (setting.SqlOrNoSql)
+                return new UserRepository(_dbContext);
+            else
+                return new MongoUserRepository(_mongoSetting);
         }
         #endregion
     }

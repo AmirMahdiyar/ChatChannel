@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,11 +13,11 @@ namespace ChatChannel.Domain.Model.Entity
         private Message() { } // ef
         public Message(string context, bool isFromSupport)
         {
-            Context = JsonSerializer.Serialize(context);
+            Context = context;
             Date = DateTime.Now;
             IsFromSupport = isFromSupport;
         }
-
+        [BsonElement("_id")]
         public int Id { get; private set; }
         public string Context { get; private set; }
         public DateTime Date { get; private set; }

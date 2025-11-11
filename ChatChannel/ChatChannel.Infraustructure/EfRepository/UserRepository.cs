@@ -11,11 +11,11 @@ namespace ChatChannel.Infraustructure.Repository
 {
     public class UserRepository : IUserRepository
     {
-        private readonly DbSet<User> _users;
+        private readonly ChatDbContext _users;
 
         public UserRepository(ChatDbContext users)
         {
-            _users = users.Set<User>();
+            _users = users;
         }
 
         public void AddUser(User user)
@@ -25,27 +25,32 @@ namespace ChatChannel.Infraustructure.Repository
 
         public async Task<User> GetUserByUsername(string username)
         {
-            return await _users.SingleOrDefaultAsync(x => x.Username.ToLower() == username.ToLower());
+            return await _users.Users.SingleOrDefaultAsync(x => x.Username.ToLower() == username.ToLower());
         }
 
         public async Task<User> GetUserWithMessages(string username)
         {
-            return await _users.Include(x => x.Messages).SingleOrDefaultAsync(x => x.Username.ToLower() == username.ToLower());
+            return await _users.Users.Include(x => x.Messages).SingleOrDefaultAsync(x => x.Username.ToLower() == username.ToLower());
         }
 
         public async Task<bool> IsUserASupport(string username)
         {
-            return await _users.AnyAsync(x => x.Username.ToLower() == username.ToLower() && x.role == Domain.Model.Enums.Role.Support);
+            return await _users.Users.AnyAsync(x => x.Username.ToLower() == username.ToLower() && x.role == Domain.Model.Enums.Role.Support);
         }
 
         public async Task<bool> IsUserExist(string username)
         {
-            return await _users.AnyAsync(x => x.Username.ToLower() == username.ToLower());
+            return await _users.Users.AnyAsync(x => x.Username.ToLower() == username.ToLower());
         }
 
         public async Task<List<User>> SeeAllUnreadMessages()
         {
-            return  await _users.Include(x => x.Messages).Where(x=>x.HaveUnreadMessage == true).ToListAsync();
+            return  await _users.Users.Include(x => x.Messages).Where(x=>x.HaveUnreadMessage == true).ToListAsync();
+        }
+
+        public Task UpdateUser(User user, Message messageToPush, bool haveRead)
+        {
+            throw new NotImplementedException();
         }
     }
 }

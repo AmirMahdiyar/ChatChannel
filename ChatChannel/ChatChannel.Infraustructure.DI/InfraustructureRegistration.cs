@@ -1,4 +1,5 @@
 ﻿using ChatChannel.Domain.Model.Contracts;
+using ChatChannel.Infraustructure.MongoRepository;
 using ChatChannel.Infraustructure.Repository;
 using ChatChannel.Infraustructure.Substructure.Utils;
 using ChatChannel.Infraustructure.UnitOfwork;
@@ -23,6 +24,10 @@ namespace ChatChannel.Infraustructure.DI
             services.Configure<ConnectionStrings>(connectionStringsConfiguration);
             var connectionStrings = connectionStringsConfiguration.Get<ConnectionStrings>();
 
+            services.Configure<MongoSetting>(_config.GetSection("MongoDbSettings"));
+            services.Configure<IsSqlOrNoSqlSetting>(_config.GetSection("IsSqlOrNoSqlSetting"));
+
+
 
             services.AddDbContext<ChatDbContext>(options =>
             {
@@ -37,6 +42,7 @@ namespace ChatChannel.Infraustructure.DI
                 options.UseSqlServer(connectionStringBuilder.ConnectionString);
             });
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserRepository, MongoUserRepository>();
             services.AddScoped<IUnitOfWork,UnitOfwork.UnitOfWork>();
             return services;
         }

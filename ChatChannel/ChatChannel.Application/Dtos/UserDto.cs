@@ -12,11 +12,11 @@ namespace ChatChannel.Application.Dtos
         {
             Username = username;
             UserId = userId;
-            Content = content;
+            Context = content;
         }
 
         public string Username { get; private set; }
         public Guid UserId { get; private set; }
-        public List<MessageDto> Content { get; private set; }
+        public List<MessageDto> Context { get; private set; }
     }
 }
