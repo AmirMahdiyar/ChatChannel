@@ -1,22 +1,12 @@
-﻿using ChatChannel.Application.Dtos;
+﻿using AliLotfiStrategy;
+using ChatChannel.Application.Dtos;
 using ChatChannel.Application.Exception;
 using ChatChannel.Domain.Model.Contracts;
 using ChatChannel.Domain.Model.Enums;
-using ChatChannel.Infraustructure;
-using ChatChannel.Infraustructure.MongoRepository;
-using ChatChannel.Infraustructure.Repository;
-using ChatChannel.Infraustructure.Substructure.Base.ApplicationException;
 using ChatChannel.Infraustructure.Substructure.Utils;
 using ChatChannel.Infraustructure.UnitOfWork;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using static ChatChannel.Infraustructure.UnitOfWork.IUnitOfWork;
 
 namespace ChatChannel.Application.Chat
 {
@@ -24,53 +14,31 @@ namespace ChatChannel.Application.Chat
     {
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IsSqlOrNoSqlSetting _isSqlOrNoSqlSetting;
-        private readonly IOptions<MongoSetting> _mongoSetting;
-        private readonly ChatDbContext _dbContext;
+        private readonly DbSettings _dbSettings;
 
-        public ChatHub(IUserRepository userRepository, IUnitOfWork unitOfWork, IOptions<IsSqlOrNoSqlSetting> isSqlOrNoSqlSetting,
-            IOptions<MongoSetting> mongoSetting, ChatDbContext dbContext)
+        public ChatHub(IUnitOfWork unitOfWork, IOptions<DbSettings> isSqlOrNoSqlSetting, IStrategy<IUserRepository, DatabaseTypes> userRepositoryStrategy, IStrategy<IUnitOfWork, DatabaseTypes> strategy)
         {
-            _unitOfWork = unitOfWork;
-            _isSqlOrNoSqlSetting = isSqlOrNoSqlSetting.Value;
-            _mongoSetting = mongoSetting;
-            _dbContext = dbContext;
-            var userRep = CheckSqlOrNoSql(_isSqlOrNoSqlSetting);
-            _userRepository = userRep;
+            //_unitOfWork = unitOfWork;
+            _dbSettings = isSqlOrNoSqlSetting.Value;
+            _unitOfWork = strategy.GetStrategy(_dbSettings.Type);
+            _userRepository = userRepositoryStrategy.GetStrategy(_dbSettings.Type);
         }
         public override async Task OnConnectedAsync()
         {
             var username = GetUsername();
             var userRole = GetRole();
-            var savingResult = new SavingResult();
             if (!await _userRepository.IsUserExist(username))
             {
                 if (userRole == Role.Support.ToString())
                 {
-                    if (_isSqlOrNoSqlSetting.SqlOrNoSql)
-                    {
-                        _userRepository.AddUser(username.ToSupportUser());
-                        savingResult = await _unitOfWork.Commit(CancellationToken.None);
-                        savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
-                    }
-                    else
-                    {
-                        _userRepository.AddUser(username.ToSupportUser());
-
-                    }
+                    _userRepository.AddUser(username.ToSupportUser());
+                    await _unitOfWork.Commit(CancellationToken.None);
                 }
 
                 else
                 {
-                    if (_isSqlOrNoSqlSetting.SqlOrNoSql)
-                    {
-                        _userRepository.AddUser(username.ToCustomerUser());
-                        savingResult = await _unitOfWork.Commit(CancellationToken.None);
-                        savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
-                    }
-                    else
-                        _userRepository.AddUser(username.ToCustomerUser());
-
+                    _userRepository.AddUser(username.ToCustomerUser());
+                    await _unitOfWork.Commit(CancellationToken.None);
                 }
 
             }
@@ -87,16 +55,9 @@ namespace ChatChannel.Application.Chat
             var targetMessage = message.ToMessage(userRole);
             user.AddMessage(targetMessage);
             user.HaveUnreadMessageToTrue();
-            if (_isSqlOrNoSqlSetting.SqlOrNoSql)
-            {
-                var savingResult = new SavingResult();
-                savingResult = await _unitOfWork.Commit(CancellationToken.None);
-                savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
-            }
-            else
-            {
-                await _userRepository.UpdateUser(user, targetMessage ,true);
-            }
+            await _userRepository.UpdateUser(user, targetMessage, true);
+            await _unitOfWork.Commit(CancellationToken.None);
+
 
             await Clients.Client(Context.ConnectionId).SendAsync("MessageSaved", "Your Message Submitted Successfully");
 
@@ -118,7 +79,7 @@ namespace ChatChannel.Application.Chat
                     "Messages", $"Username : {userWithUnreadMessage.Username} , UserId : {userWithUnreadMessage.UserId} , Content :{messagesText} ");
             }
         }
-        
+
         public async Task SupportReplyToUser(string customerUsername, string message)
         {
             var user = GetUsername();
@@ -129,16 +90,8 @@ namespace ChatChannel.Application.Chat
             var supportResponseToCustomer = message.ToMessage(userRole);
             customer.AddMessage(supportResponseToCustomer);
             customer.HaveUnreadMessageToFalse();
-            if (_isSqlOrNoSqlSetting.SqlOrNoSql)
-            {
-                var savingResult = new SavingResult();
-                savingResult = await _unitOfWork.Commit(CancellationToken.None);
-                savingResult.ThrowIfNoChanges<NoChangedHappenedApplicationException>();
-            }
-            else
-            {
-                await _userRepository.UpdateUser(customer,supportResponseToCustomer,false);
-            }
+            await _userRepository.UpdateUser(customer, supportResponseToCustomer, false);
+            await _unitOfWork.Commit(CancellationToken.None);
 
         }
 
@@ -149,7 +102,7 @@ namespace ChatChannel.Application.Chat
             if (userRole == "Support")
                 throw new SupportIsNotAllowedException();
             var customer = await _userRepository.GetUserWithMessages(user);
-            var messagesList = customer.Messages.Select(x=> new MessageDto(user,x.Context,x.Date)).ToList();
+            var messagesList = customer.Messages.Select(x => new MessageDto(user, x.Context, x.Date)).ToList();
             foreach (var message in messagesList)
                 await Clients.Client(Context.ConnectionId).SendAsync
                     ("Messages", $"username : {message.Username} - Content : {message.Context} - DateOfSent : {message.SentDate}");
@@ -171,13 +124,13 @@ namespace ChatChannel.Application.Chat
         {
             return Context.User.Claims.SingleOrDefault(x => x.Type == "Username").Value;
         }
-        private IUserRepository CheckSqlOrNoSql(IsSqlOrNoSqlSetting setting)
-        {
-            if (setting.SqlOrNoSql)
-                return new UserRepository(_dbContext);
-            else
-                return new MongoUserRepository(_mongoSetting);
-        }
+        //private IUserRepository CheckSqlOrNoSql(DbSettings setting)
+        //{
+        //    if (setting.Type)
+        //        return new UserRepository(_dbContext);
+        //    else
+        //        return new MongoUserRepository(_mongoSetting);
+        //}
         #endregion
     }
 }

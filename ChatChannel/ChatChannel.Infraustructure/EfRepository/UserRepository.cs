@@ -1,13 +1,9 @@
 ﻿using ChatChannel.Domain.Model.Contracts;
 using ChatChannel.Domain.Model.Entity;
+using ChatChannel.Domain.Model.Enums;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ChatChannel.Infraustructure.Repository
+namespace ChatChannel.Infraustructure.EfRepository
 {
     public class UserRepository : IUserRepository
     {
@@ -17,6 +13,8 @@ namespace ChatChannel.Infraustructure.Repository
         {
             _users = users;
         }
+
+        public DatabaseTypes DbType => DatabaseTypes.SqlServer;
 
         public void AddUser(User user)
         {
@@ -45,12 +43,12 @@ namespace ChatChannel.Infraustructure.Repository
 
         public async Task<List<User>> SeeAllUnreadMessages()
         {
-            return  await _users.Users.Include(x => x.Messages).Where(x=>x.HaveUnreadMessage == true).ToListAsync();
+            return await _users.Users.Include(x => x.Messages).Where(x => x.HaveUnreadMessage == true).ToListAsync();
         }
 
         public Task UpdateUser(User user, Message messageToPush, bool haveRead)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
     }
 }

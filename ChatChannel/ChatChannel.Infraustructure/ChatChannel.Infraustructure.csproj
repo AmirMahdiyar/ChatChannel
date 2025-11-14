@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AliLotfiStrategy\AliLotfiStrategy.csproj" />
     <ProjectReference Include="..\ChatChannel.Domain.Model\ChatChannel.Domain.Model.csproj" />
   </ItemGroup>
 

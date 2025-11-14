@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AliLotfiStrategy\AliLotfiStrategy.csproj" />
     <ProjectReference Include="..\ChatChannel.Application.DI\ChatChannel.Application.DI.csproj" />
     <ProjectReference Include="..\ChatChannel.Application\ChatChannel.Application.csproj" />
     <ProjectReference Include="..\ChatChannel.Infraustructure.DI\ChatChannel.Infraustructure.DI.csproj" />

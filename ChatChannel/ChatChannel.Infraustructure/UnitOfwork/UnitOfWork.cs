@@ -1,10 +1,4 @@
 ﻿using ChatChannel.Infraustructure.UnitOfWork;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static ChatChannel.Infraustructure.UnitOfWork.IUnitOfWork;
 
 namespace ChatChannel.Infraustructure.UnitOfwork
 {
@@ -17,10 +11,9 @@ namespace ChatChannel.Infraustructure.UnitOfwork
             _context = context;
         }
 
-        public async Task<SavingResult> Commit(CancellationToken ct)
+        public async Task<int> Commit(CancellationToken ct)
         {
-            var savedChangedStateCount = await _context.SaveChangesAsync(ct);
-            return new SavingResult { ChangesCount = savedChangedStateCount };
+            return await _context.SaveChangesAsync(ct);
         }
     }
 }
