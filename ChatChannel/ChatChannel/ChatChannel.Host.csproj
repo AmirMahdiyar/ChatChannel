@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <PrivateAssets>all</PrivateAssets>
@@ -24,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AliLotfiStrategy\AliLotfiStrategy.csproj" />
     <ProjectReference Include="..\ChatChannel.Application.DI\ChatChannel.Application.DI.csproj" />
     <ProjectReference Include="..\ChatChannel.Application\ChatChannel.Application.csproj" />
     <ProjectReference Include="..\ChatChannel.Infraustructure.DI\ChatChannel.Infraustructure.DI.csproj" />

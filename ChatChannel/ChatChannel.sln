@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36221.1 d17.14
+VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatChannel.Host", "ChatChannel\ChatChannel.Host.csproj", "{9E97D829-D0B5-4F76-B2E6-416A675014FC}"
 EndProject
@@ -24,6 +24,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatChannel.Domain.DI", "ChatChannel.Domain.DI\ChatChannel.Domain.DI.csproj", "{09C58D3A-237D-4048-84A2-5195513A6467}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatChannel.Infraustructure.DI", "ChatChannel.Infraustructure.DI\ChatChannel.Infraustructure.DI.csproj", "{56514789-B440-4E06-982A-4FE474BE630F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AliLotfiStrategy", "AliLotfiStrategy\AliLotfiStrategy.csproj", "{6565E0F3-3F6A-497F-BA06-7DC857E5A200}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +61,10 @@ Global
 		{56514789-B440-4E06-982A-4FE474BE630F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56514789-B440-4E06-982A-4FE474BE630F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56514789-B440-4E06-982A-4FE474BE630F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6565E0F3-3F6A-497F-BA06-7DC857E5A200}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6565E0F3-3F6A-497F-BA06-7DC857E5A200}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6565E0F3-3F6A-497F-BA06-7DC857E5A200}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6565E0F3-3F6A-497F-BA06-7DC857E5A200}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
